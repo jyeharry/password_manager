@@ -19,7 +19,7 @@
       </svg>
     <% end %>
   </h1>
-  <%= link_to "Edit", edit_password_path %>
+  <%= link_to "Edit", edit_password_path if current_user_password.editable? %>
 </div>
 
 <h3>Credentials</h3>
@@ -48,19 +48,24 @@
 </div>
 
 <h3>Share</h3>
-<%= link_to "Add a user", new_password_share_path(@password) %>
+<%= if current_user_password.shareable?
+  link_to "Add a user", new_password_share_path(@password)
+end %>
 
 <ul class="not-prose mt-1 flex flex-col gap-1 divide-y divide-gray-100">
-  <% @password.users.excluding(current_user).each do |user| %>
+  <% @password.user_passwords.includes(:user).where.not(user: current_user).each do |user_password| %>
     <li class='flex justify-between items-center'>
-      <%= user.email %>
-      <%= button_to "Remove",
-      password_share_path(@password, user),
-      method: :delete,
-      class: "cursor-pointer",
-      data: {
-        turbo_confirm: "Are you sure?",
-      } %>
+      <span><%= user_password.user.email %></span>
+      <span><%= user_password.role.capitalize %></span>
+      <%= if current_user_password.deletable?
+        button_to "Remove",
+        password_share_path(@password, user_password.user),
+        method: :delete,
+        class: "cursor-pointer",
+        data: {
+          turbo_confirm: "Are you sure?",
+        }
+      end %>
     </li>
   <% end %>
 </ul>
